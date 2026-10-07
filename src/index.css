@@ -1,0 +1,180 @@
+@import "tailwindcss";
+
+@theme {
+  --font-cairo: "Cairo", "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  --color-navy: #0a2c72;
+  --color-navy-dark: #071e52;
+  --color-navy-mid: #0d3a8a;
+  --color-navy-light: #1546a0;
+  --color-blue: #1a5fbf;
+  --color-blue-bright: #2b7de9;
+  --color-blue-sky: #3d8bfd;
+  --color-blue-soft: #e8f1fc;
+  --color-page: #e9eef6;
+  --color-card: #ffffff;
+  --color-danger: #e53935;
+  --color-danger-bg: #fde8ea;
+  --color-danger-soft: #fce4ec;
+  --color-success: #2e9e4f;
+  --color-success-bg: #e8f6ec;
+  --color-warn: #f59e0b;
+  --color-muted: #6b7a90;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "Cairo", "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  background: #e9eef6;
+  color: #12305a;
+  direction: rtl;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #b7c4d8;
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  display: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulseRing {
+  0% {
+    box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(229, 57, 53, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(229, 57, 53, 0);
+  }
+}
+
+@keyframes checkPop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.35s ease both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.28s ease both;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.35s ease both;
+}
+
+.notif-pulse {
+  animation: pulseRing 1.6s infinite;
+}
+
+.check-pop {
+  animation: checkPop 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+.step-line {
+  height: 3px;
+  flex: 1;
+  background: linear-gradient(to left, #7eb6ff, #4d8de8);
+  border-radius: 99px;
+  min-width: 28px;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #receipt-print,
+  #receipt-print * {
+    visibility: visible;
+  }
+  #receipt-print {
+    position: absolute;
+    inset: 0;
+    background: white;
+  }
+}
