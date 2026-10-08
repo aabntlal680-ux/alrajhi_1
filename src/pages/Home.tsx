@@ -135,7 +135,7 @@ export default function Home({ onNavigate }: { onNavigate: (p: PageId) => void }
             </div>
             <div className="mt-3 font-mono tracking-widest">4580 •••• •••• 2291</div>
             <div className="mt-4 flex justify-between text-xs text-blue-100">
-              <span>صالحة حتى 08/28</span>
+              <span>صالحة حتى 08/32</span>
               <span>متاحة</span>
             </div>
             <button
