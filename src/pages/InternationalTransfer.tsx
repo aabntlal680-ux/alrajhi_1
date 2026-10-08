@@ -1,18 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  BENEFICIARIES,
   CURRENCIES,
   calcFee,
   formatMoney,
   type Beneficiary,
 } from "../data";
+import { getAllBeneficiaries, getLastSavedBeneficiaryId } from "../utils/demoStorage";
 import {
   IconBank,
   IconCalendar,
   IconCheck,
   IconChevron,
   IconClock,
-  IconDownload,
   IconFile,
   IconGlobe,
   IconInfo,
@@ -27,7 +26,7 @@ type Props = {
   onToast: (msg: string, type?: "ok" | "err" | "info") => void;
 };
 
-const MIN_AMOUNT = 1000000;
+const MIN_AMOUNT = 1;
 
 function FlagFor({ code }: { code: string }) {
   if (code === "AE" || code === "AED") return <UaeFlag />;
@@ -42,52 +41,50 @@ function FlagFor({ code }: { code: string }) {
 }
 
 export default function InternationalTransfer({ onToast }: Props) {
+  const beneficiaries = useMemo(() => getAllBeneficiaries(), []);
+  const internationalBeneficiaries = useMemo(
+    () => beneficiaries.filter((item) => item.countryCode !== "SA"),
+    [beneficiaries]
+  );
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [beneficiaryId, setBeneficiaryId] = useState(BENEFICIARIES[0].id);
-  const [amount, setAmount] = useState(1000000);
-  const [amountStr, setAmountStr] = useState("1,000,000.00");
+  const [beneficiaryId, setBeneficiaryId] = useState(() => {
+    const last = getLastSavedBeneficiaryId();
+    return internationalBeneficiaries.some((item) => item.id === last)
+      ? last
+      : internationalBeneficiaries[0]?.id ?? "";
+  });
+  const [amount, setAmount] = useState(2500);
+  const [amountStr, setAmountStr] = useState("2,500.00");
   const [currency, setCurrency] = useState("AED");
-  const [date, setDate] = useState("2026-09-29");
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [curOpen, setCurOpen] = useState(false);
   const [benOpen, setBenOpen] = useState(false);
   const [calOpen, setCalOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pinOpen, setPinOpen] = useState(false);
-  const [pin, setPin] = useState("");
+  const [demoCodeOpen, setDemoCodeOpen] = useState(false);
+  const [demoCode, setDemoCode] = useState("");
+  const [simulationResult, setSimulationResult] = useState<"success" | "failed" | null>(null);
   const [busy, setBusy] = useState(false);
-  const [feePaid, setFeePaid] = useState(false);
-  const [refNo, setRefNo] = useState("RJ-20260929-88421");
+  const [refNo, setRefNo] = useState("");
   const [cancelOpen, setCancelOpen] = useState(false);
   const curRef = useRef<HTMLDivElement>(null);
   const benRef = useRef<HTMLDivElement>(null);
 
-  const beneficiary = BENEFICIARIES.find((b) => b.id === beneficiaryId) as Beneficiary;
-  const cur = CURRENCIES.find((c) => c.code === currency) ?? CURRENCIES[0];
+  const beneficiary = (beneficiaries.find((item) => item.id === beneficiaryId) ??
+    internationalBeneficiaries[0]) as Beneficiary;
+  const cur = CURRENCIES.find((item) => item.code === currency) ?? CURRENCIES[0];
   const fee = useMemo(() => calcFee(amount), [amount]);
   const sent = Math.max(amount - fee, 0);
   const received = sent * cur.rate;
-  const incomplete = !feePaid && step === 1;
 
   useEffect(() => {
-    const onDoc = (e: MouseEvent) => {
-      if (curRef.current && !curRef.current.contains(e.target as Node)) setCurOpen(false);
-      if (benRef.current && !benRef.current.contains(e.target as Node)) setBenOpen(false);
+    const onDoc = (event: MouseEvent) => {
+      if (curRef.current && !curRef.current.contains(event.target as Node)) setCurOpen(false);
+      if (benRef.current && !benRef.current.contains(event.target as Node)) setBenOpen(false);
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
-
-  useEffect(() => {
-    if (!pinOpen || busy) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key >= "0" && e.key <= "9" && pin.length < 4) setPin((p) => (p + e.key).slice(0, 4));
-      if (e.key === "Backspace") setPin((p) => p.slice(0, -1));
-      if (e.key === "Enter") submitPin();
-      if (e.key === "Escape") setPinOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [pinOpen, pin, busy]);
 
   const displayDate = date.replace(/-/g, "/");
 
@@ -103,7 +100,7 @@ export default function InternationalTransfer({ onToast }: Props) {
 
   const startSend = () => {
     if (amount < MIN_AMOUNT) {
-      onToast(`الحد الأدنى للتحويل هو ${formatMoney(MIN_AMOUNT)} ريال`, "err");
+      onToast(`الحد الأدنى للمبلغ التجريبي هو ${formatMoney(MIN_AMOUNT)} ريال`, "err");
       return;
     }
     if (amount <= 0) {
@@ -116,49 +113,47 @@ export default function InternationalTransfer({ onToast }: Props) {
   const goReview = () => {
     setConfirmOpen(false);
     setStep(2);
-    onToast("تم الانتقال إلى المراجعة والتأكيد", "info");
+    onToast("انتقلت إلى مراجعة بيانات المحاكاة فقط.", "info");
   };
 
-  const requestPin = () => {
-    setPin("");
-    setPinOpen(true);
+  const requestDemoCode = () => {
+    setDemoCode("");
+    setDemoCodeOpen(true);
   };
 
-  const submitPin = () => {
-    if (pin.length < 4) {
-      onToast("يرجى إدخال الرقم السري المكوّن من 4 خانات", "err");
+  const submitDemoCode = () => {
+    const code = demoCode.trim().toUpperCase();
+    if (code !== "DEMO-SUCCESS" && code !== "DEMO-FAIL") {
+      onToast("استخدم رمزًا تجريبيًا فقط: DEMO-SUCCESS أو DEMO-FAIL.", "err");
       return;
     }
-    if (pin !== "1234" && pin !== "0000") {
-      onToast("الرقم السري غير صحيح. للتجربة استخدم 1234", "err");
-      setPin("");
-      return;
-    }
+
+    const result = code === "DEMO-SUCCESS" ? "success" : "failed";
     setBusy(true);
     setTimeout(() => {
       setBusy(false);
-      setPinOpen(false);
-      setFeePaid(true);
-      setRefNo("RJ-" + Date.now().toString().slice(-10));
+      setDemoCodeOpen(false);
+      setDemoCode("");
+      setSimulationResult(result);
+      setRefNo(`SIM-${Date.now().toString().slice(-10)}`);
       setStep(3);
-      onToast("تم تنفيذ التحويل بنجاح", "ok");
-    }, 1400);
-  };
-
-  const payFees = () => {
-    setBusy(true);
-    setTimeout(() => {
-      setBusy(false);
-      setFeePaid(true);
-      onToast("تم تحصيل الرسوم بنجاح", "ok");
-    }, 900);
+      onToast(
+        result === "success"
+          ? "اكتملت محاكاة النجاح؛ لم يتم تنفيذ حوالة فعلية."
+          : "اكتملت محاكاة الفشل؛ لم يتم تنفيذ حوالة فعلية.",
+        "info"
+      );
+    }, 500);
   };
 
   const resetAll = () => {
     setStep(1);
-    setFeePaid(false);
+    setSimulationResult(null);
+    setDemoCode("");
+    setDemoCodeOpen(false);
+    setRefNo("");
     setCancelOpen(false);
-    onToast("تم إلغاء العملية", "info");
+    onToast("تمت إعادة ضبط سيناريو المحاكاة.", "info");
   };
 
   return (
@@ -172,16 +167,16 @@ export default function InternationalTransfer({ onToast }: Props) {
                   <IconGlobe size={26} />
                 </div>
                 <div>
-                  <h1 className="text-xl font-extrabold lg:text-[22px]">تحويل دولي</h1>
-                  <p className="text-[12.5px] text-blue-100/90">إجراء تحويل مالي إلى خارج المملكة</p>
+                  <h1 className="text-xl font-extrabold lg:text-[22px]">تحويل دولي · محاكاة</h1>
+                  <p className="text-[12.5px] text-blue-100/90">استعراض تدفق واجهة تجريبي فقط — لا يتم تنفيذ تحويل فعلي</p>
                 </div>
               </div>
 
               <ol className="flex min-w-0 flex-1 items-center justify-end gap-2 lg:max-w-[560px]">
                 {[
-                  { n: 1, label: "بيانات التحويل" },
-                  { n: 2, label: "المراجعة والتأكيد" },
-                  { n: 3, label: "إصدار الإيصال" },
+                  { n: 1, label: "بيانات الاختبار" },
+                  { n: 2, label: "مراجعة الاختبار" },
+                  { n: 3, label: "نتيجة المحاكاة" },
                 ].map((s, i) => (
                   <li key={s.n} className="flex min-w-0 items-center gap-2">
                     {i > 0 && <div className={`step-line ${step >= s.n ? "opacity-100" : "opacity-40"}`} />}
@@ -233,7 +228,7 @@ export default function InternationalTransfer({ onToast }: Props) {
                       </button>
                       {benOpen && (
                         <div className="absolute top-full right-0 z-20 mt-1 w-full min-w-[260px] overflow-hidden rounded-xl border border-slate-100 bg-white shadow-xl">
-                          {BENEFICIARIES.filter((b) => b.countryCode !== "SA").map((b) => (
+                          {internationalBeneficiaries.map((b) => (
                             <button
                               key={b.id}
                               onClick={() => {
@@ -327,132 +322,71 @@ export default function InternationalTransfer({ onToast }: Props) {
 
                 <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
                   <header className="mb-3 flex items-center justify-between">
-                    <h2 className="text-[15px] font-extrabold text-[#1a5fbf]">معلومات إضافية</h2>
-                    <span className="text-[#1a5fbf]">
-                      <IconFile size={18} />
-                    </span>
+                    <h2 className="text-[15px] font-extrabold text-[#1a5fbf]">معلومات المحاكاة</h2>
+                    <span className="text-[#1a5fbf]"><IconFile size={18} /></span>
                   </header>
                   <div className="space-y-3 text-[13px]">
                     <div>
                       <div className="text-[12px] text-slate-500">نوع الرسوم</div>
-                      <div className="mt-0.5 font-bold text-[#0a2c72]">رسوم خدمات تفعيل عملية تحويل</div>
+                      <div className="mt-0.5 font-bold text-[#0a2c72]">قيمة تقديرية للعرض فقط</div>
                     </div>
                     <div className="relative">
                       <div className="flex items-center gap-1 text-[12px] text-slate-500">
-                        تاريخ التحويل
+                        تاريخ سيناريو الاختبار
                         <IconCalendar size={13} className="text-[#1a5fbf]" />
                       </div>
-                      <button
-                        onClick={() => setCalOpen(true)}
-                        className="mt-0.5 font-bold text-[#0a2c72]"
-                      >
+                      <button onClick={() => setCalOpen(true)} className="mt-0.5 font-bold text-[#0a2c72]">
                         {displayDate}
                       </button>
                     </div>
                     <div>
-                      <div className="mb-1 flex items-center gap-1 text-[12px] text-slate-500">
-                        حالة التحويل
-                        <IconX size={12} className="text-slate-400" />
-                      </div>
-                      {incomplete ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-[#fde8ea] px-3 py-1 text-[12px] font-bold text-[#d32f2f]">
-                          لم يتم إكمالها
-                          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#e53935] text-white">
-                            <IconX size={10} />
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-[12px] font-bold text-emerald-700">
-                          جاهز للإرسال
-                          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
-                            <IconCheck size={10} />
-                          </span>
-                        </span>
-                      )}
+                      <div className="mb-1 text-[12px] text-slate-500">حالة المحاكاة</div>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-[12px] font-bold text-blue-700">
+                        {simulationResult === "success" ? "نجاح تجريبي" : simulationResult === "failed" ? "فشل تجريبي" : "بانتظار الاختبار"}
+                      </span>
                     </div>
                   </div>
                 </section>
               </div>
 
               <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
-                <div className="flex items-start justify-between gap-3 px-4 pt-4">
-                  <div>
-                    <div className="flex items-center gap-2 text-[15px] font-extrabold text-[#1a5fbf]">
-                      حالة التحويل
-                      <IconClock size={18} />
-                    </div>
-                    <div className={`mt-1 text-[13px] font-bold ${incomplete ? "text-[#d32f2f]" : "text-emerald-700"}`}>
-                      {incomplete ? (
-                        <span className="inline-flex items-center gap-1">
-                          لم يتم إكمال عملية التحويل
-                          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#e53935] text-white">
-                            <IconX size={10} />
-                          </span>
-                        </span>
-                      ) : (
-                        "تم استكمال إجراءات الرسوم — يمكن إرسال التحويل"
-                      )}
-                    </div>
-                    <div className="text-[12px] text-slate-500">
-                      {incomplete
-                        ? "يتم استكمال إجراءات التحويل"
-                        : "الرسوم محصّلة وجاهزة للمتابعة"}
-                    </div>
-                  </div>
-                  {incomplete && (
-                    <button
-                      onClick={payFees}
-                      disabled={busy}
-                      className="rounded-xl bg-[#0a2c72] px-3 py-2 text-xs font-bold text-white hover:bg-[#0d3a8a] disabled:opacity-60"
-                    >
-                      {busy ? "جاري التحصيل..." : "تحصيل الرسوم"}
-                    </button>
-                  )}
-                </div>
-
-                <div className={`mt-3 ${incomplete ? "bg-[#fff5f6]" : "bg-emerald-50/60"} px-4 py-3`}>
-                  <div className="hidden grid-cols-4 gap-3 text-[12px] font-bold text-[#1a5fbf] md:grid">
-                    <div>نوع الرسوم</div>
-                    <div>المبلغ</div>
-                    <div>الحالة</div>
-                    <div>ملاحظات</div>
-                  </div>
-                  <div className="mt-2 grid grid-cols-1 gap-3 text-[13px] md:grid-cols-4 md:items-center">
+                  <div className="flex items-start justify-between gap-3 px-4 pt-4">
                     <div>
-                      <div className="text-[11px] text-slate-400 md:hidden">نوع الرسوم</div>
-                      رسوم خدمات تفعيل عملية تحويل
+                      <div className="flex items-center gap-2 text-[15px] font-extrabold text-[#1a5fbf]">
+                        حالة سيناريو الاختبار <IconClock size={18} />
+                      </div>
+                      <div className="mt-1 text-[13px] font-bold text-[#0a2c72]">
+                        {simulationResult === "success" ? "تم عرض نتيجة نجاح تجريبية" : simulationResult === "failed" ? "تم عرض نتيجة فشل تجريبية" : "لم يتم اختيار سيناريو بعد"}
+                      </div>
+                      <div className="text-[12px] text-slate-500">لا يتم إرسال بيانات أو تنفيذ حوالات أو تحصيل رسوم.</div>
                     </div>
-                    <div className="font-extrabold text-[#0a2c72]">
-                      <div className="text-[11px] font-medium text-slate-400 md:hidden">المبلغ</div>
-                      {formatMoney(fee)} SAR
-                    </div>
-                    <div>
-                      <div className="text-[11px] text-slate-400 md:hidden">الحالة</div>
-                      {incomplete ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-[#fde8ea] px-3 py-1 text-[12px] font-bold text-[#d32f2f]">
-                          لم يتم تحصيلها
-                          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#e53935] text-white">
-                            <IconX size={10} />
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-[12px] font-bold text-emerald-700">
-                          تم تحصيلها
-                          <IconCheck size={12} />
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-slate-600">
-                      <div className="text-[11px] text-slate-400 md:hidden">ملاحظات</div>
-                      الرسوم المستحقة لتفعيل عملية تحويل إلى دولة {beneficiary.country}
+                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">محاكاة</span>
+                  </div>
+                  <div className="mt-3 bg-blue-50/60 px-4 py-3">
+                    <div className="grid grid-cols-1 gap-3 text-[13px] md:grid-cols-4 md:items-center">
+                      <div>
+                        <div className="text-[11px] text-slate-500">بند الرسوم</div>
+                        تقدير توضيحي فقط
+                      </div>
+                      <div className="font-extrabold text-[#0a2c72]">
+                        <div className="text-[11px] font-medium text-slate-500">القيمة الافتراضية</div>
+                        {formatMoney(fee)} SAR
+                      </div>
+                      <div>
+                        <div className="text-[11px] text-slate-500">التحصيل</div>
+                        لا يوجد تحصيل فعلي
+                      </div>
+                      <div className="text-slate-600">
+                        <div className="text-[11px] text-slate-500">ملاحظة</div>
+                        بيانات ورسوم افتراضية لأغراض عرض الواجهة فقط.
+                      </div>
                     </div>
                   </div>
-                </div>
-              </section>
+                </section>
 
               <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
                 <h3 className="mb-3 flex items-center gap-2 text-[15px] font-extrabold text-[#1a5fbf]">
-                  تفاصيل الرسوم والمعلومات
+                  تفاصيل المحاكاة والمعلومات
                   <IconFile size={16} />
                 </h3>
                 <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -480,7 +414,7 @@ export default function InternationalTransfer({ onToast }: Props) {
                   </div>
                 </div>
                 <div className="mt-4 rounded-xl bg-blue-50 px-4 py-3 text-[13px] text-[#0a2c72]">
-                  سعر الصرف التقريبي: 1 SAR = {cur.rate} {cur.code} · المبلغ المستلم المتوقع{" "}
+                  سعر صرف تجريبي: 1 SAR = {cur.rate} {cur.code} · المبلغ النظري المتوقع{" "}
                   <b>
                     {formatMoney(received)} {cur.code}
                   </b>
@@ -491,8 +425,8 @@ export default function InternationalTransfer({ onToast }: Props) {
 
           {step === 2 && (
             <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-              <h2 className="text-lg font-extrabold text-[#0a2c72]">المراجعة والتأكيد</h2>
-              <p className="mt-1 text-sm text-slate-500">يرجى التأكد من صحة البيانات قبل إرسال التحويل</p>
+              <h2 className="text-lg font-extrabold text-[#0a2c72]">مراجعة سيناريو المحاكاة</h2>
+              <p className="mt-1 text-sm text-slate-500">راجع بيانات الاختبار؛ المتابعة تعرض نتيجة محاكاة ولا ترسل حوالة</p>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 {[
                   ["المستفيد", beneficiary.name],
@@ -504,7 +438,7 @@ export default function InternationalTransfer({ onToast }: Props) {
                   ["العملة", `${cur.name} (${cur.code})`],
                   ["المبلغ المستلم", `${formatMoney(received)} ${cur.code}`],
                   ["التاريخ", displayDate],
-                  ["الحساب المصدر", "الحساب الجاري · **** 4412"],
+                  ["الحساب الافتراضي", "حساب تجريبي · **** 0000"],
                 ].map(([k, v]) => (
                   <div key={k} className="rounded-xl bg-slate-50 px-4 py-3">
                     <div className="text-[12px] text-slate-500">{k}</div>
@@ -514,10 +448,10 @@ export default function InternationalTransfer({ onToast }: Props) {
               </div>
               <div className="mt-5 flex flex-wrap gap-3">
                 <button
-                  onClick={requestPin}
+                  onClick={requestDemoCode}
                   className="inline-flex items-center gap-2 rounded-xl bg-[#0a2c72] px-6 py-3 font-bold text-white hover:bg-[#0d3a8a]"
                 >
-                  تأكيد وإرسال
+                  اختيار سيناريو تجريبي
                   <IconSend size={18} />
                 </button>
                 <button
@@ -533,30 +467,42 @@ export default function InternationalTransfer({ onToast }: Props) {
           {step === 3 && (
             <section id="receipt-print" className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
               <div className="flex flex-col items-center text-center">
-                <div className="check-pop flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 text-white">
-                  <IconCheck size={32} />
+                <div className={`check-pop flex h-16 w-16 items-center justify-center rounded-full text-white ${simulationResult === "failed" ? "bg-red-600" : "bg-emerald-500"}`}>
+                  {simulationResult === "failed" ? <IconX size={30} /> : <IconCheck size={32} />}
                 </div>
-                <h2 className="mt-3 text-xl font-extrabold text-[#0a2c72]">تم تنفيذ التحويل بنجاح</h2>
-                <p className="text-sm text-slate-500">إيصال التحويل الدولي · مصرف الراجحي</p>
+                <h2 className={`mt-3 text-xl font-extrabold ${simulationResult === "failed" ? "text-red-700" : "text-emerald-700"}`}>
+                  {simulationResult === "failed" ? "فشل سيناريو المحاكاة" : "نجاح سيناريو المحاكاة"}
+                </h2>
+                <p className="text-sm text-slate-500">تقرير اختبار تجريبي فقط — لا يثبت تنفيذ حوالة أو حركة مالية</p>
                 <div className="mt-2 rounded-full bg-blue-50 px-4 py-1 text-sm font-bold text-[#1a5fbf]">
-                  رقم المرجع: {refNo}
+                  رقم الاختبار: {refNo}
                 </div>
               </div>
+
+              {simulationResult === "failed" && (
+                <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-800">
+                  <div className="font-extrabold">سبب الفشل في المحاكاة</div>
+                  <p>تم اختيار رمز السيناريو التجريبي DEMO-FAIL. هذه نتيجة اختبار واجهة فقط، وليست رفضًا من مصرف أو نظام تحويل.</p>
+                </div>
+              )}
+
               <div className="mt-6 divide-y divide-slate-100 rounded-2xl border border-slate-100">
                 {[
-                  ["المستفيد", beneficiary.name],
-                  ["المصرف المستفيد", beneficiary.bank],
-                  ["IBAN", beneficiary.iban],
-                  ["المبلغ الإجمالي", `${formatMoney(amount)} SAR`],
-                  ["الرسوم", `${formatMoney(fee)} SAR`],
-                  ["المبلغ المرسل", `${formatMoney(sent)} SAR`],
-                  ["المبلغ المستلم", `${formatMoney(received)} ${cur.code}`],
-                  ["تاريخ التنفيذ", displayDate],
-                  ["الحالة", "مكتمل"],
-                ].map(([k, v]) => (
-                  <div key={k} className="flex items-center justify-between px-4 py-3 text-sm">
-                    <span className="text-slate-500">{k}</span>
-                    <span className="font-bold text-[#0a2c72]">{v}</span>
+                  ["المستفيد التجريبي", beneficiary.name],
+                  ["المصرف التجريبي", beneficiary.bank],
+                  ["الدولة", beneficiary.country],
+                  ["المبلغ التجريبي", `${formatMoney(amount)} SAR`],
+                  ["الرسوم التقديرية", `${formatMoney(fee)} SAR`],
+                  ["المبلغ النظري", `${formatMoney(sent)} SAR`],
+                  ["العملة المقابلة", `${formatMoney(received)} ${cur.code}`],
+                  ["تاريخ الاختبار", displayDate],
+                  ["الحالة", simulationResult === "failed" ? "فشل تجريبي" : "نجاح تجريبي"],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                    <span className="text-slate-500">{label}</span>
+                    <span className={`text-left font-bold ${simulationResult === "failed" && ["المستفيد التجريبي", "المصرف التجريبي", "الحالة"].includes(label) ? "text-red-700" : "text-[#0a2c72]"}`}>
+                      {value}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -565,22 +511,17 @@ export default function InternationalTransfer({ onToast }: Props) {
                   onClick={() => window.print()}
                   className="inline-flex items-center gap-2 rounded-xl bg-[#0a2c72] px-5 py-2.5 font-bold text-white"
                 >
-                  <IconPrint size={16} /> طباعة الإيصال
-                </button>
-                <button
-                  onClick={() => onToast("تم تجهيز ملف PDF للإيصال", "ok")}
-                  className="inline-flex items-center gap-2 rounded-xl border border-[#0a2c72] px-5 py-2.5 font-bold text-[#0a2c72]"
-                >
-                  <IconDownload size={16} /> تنزيل PDF
+                  <IconPrint size={16} /> طباعة تقرير المحاكاة
                 </button>
                 <button
                   onClick={() => {
                     setStep(1);
-                    setFeePaid(false);
+                    setSimulationResult(null);
+                    setRefNo("");
                   }}
                   className="rounded-xl px-5 py-2.5 font-bold text-slate-500 hover:bg-slate-50"
                 >
-                  تحويل جديد
+                  اختبار جديد
                 </button>
               </div>
             </section>
@@ -590,22 +531,22 @@ export default function InternationalTransfer({ onToast }: Props) {
         <aside className="w-full shrink-0 xl:w-[280px]">
           <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100 xl:sticky xl:top-4">
             <header className="mb-4 flex items-center justify-between">
-              <h2 className="text-[15px] font-extrabold text-[#1a5fbf]">ملخص التحويل</h2>
+              <h2 className="text-[15px] font-extrabold text-[#1a5fbf]">ملخص الاختبار</h2>
               <span className="text-[#1a5fbf]">
                 <IconTransfer size={18} />
               </span>
             </header>
             <div className="space-y-3 text-[13.5px]">
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">المبلغ الإجمالي</span>
+                <span className="text-slate-500">المبلغ التجريبي</span>
                 <span className="font-extrabold text-[#0a2c72]">{formatMoney(amount)} SAR</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">الرسوم</span>
+                <span className="text-slate-500">رسوم افتراضية</span>
                 <span className="font-extrabold text-[#0a2c72]">{formatMoney(fee)} SAR</span>
               </div>
               <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-                <span className="text-slate-500">المبلغ المرسل</span>
+                <span className="text-slate-500">الصافي النظري</span>
                 <span className="font-extrabold text-[#0a2c72]">{formatMoney(sent)} SAR</span>
               </div>
             </div>
@@ -614,14 +555,14 @@ export default function InternationalTransfer({ onToast }: Props) {
               disabled={step === 3}
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a2c72] py-3 text-[14.5px] font-extrabold text-white shadow-md shadow-[#0a2c72]/25 hover:bg-[#0d3a8a] disabled:opacity-50"
             >
-              إرسال التحويل
+              بدء المحاكاة
               <IconSend size={18} />
             </button>
             <button
               onClick={() => setCancelOpen(true)}
               className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-[#0a2c72] bg-white py-3 text-[14.5px] font-extrabold text-[#0a2c72] hover:bg-slate-50"
             >
-              إلغاء
+              إعادة ضبط
               <span className="flex h-5 w-5 items-center justify-center rounded-full border border-[#0a2c72]">
                 <IconX size={12} />
               </span>
@@ -648,9 +589,9 @@ export default function InternationalTransfer({ onToast }: Props) {
       )}
 
       {confirmOpen && (
-        <Modal onClose={() => setConfirmOpen(false)} title="تأكيد بيانات التحويل">
+        <Modal onClose={() => setConfirmOpen(false)} title="تأكيد بيانات المحاكاة">
           <p className="text-sm leading-6 text-slate-600">
-            سيتم تحويلك إلى خطوة المراجعة والتأكيد قبل التنفيذ النهائي. المبلغ الإجمالي{" "}
+            ستعرض هذه الخطوة نتيجة محاكاة فقط. لا توجد عملية فعلية. المبلغ التجريبي{" "}
             <b>
               {formatMoney(amount)} SAR
             </b>{" "}
@@ -658,7 +599,7 @@ export default function InternationalTransfer({ onToast }: Props) {
           </p>
           <div className="mt-4 flex gap-2">
             <button onClick={goReview} className="flex-1 rounded-xl bg-[#0a2c72] py-2.5 font-bold text-white">
-              متابعة
+              متابعة المحاكاة
             </button>
             <button
               onClick={() => setConfirmOpen(false)}
@@ -670,47 +611,64 @@ export default function InternationalTransfer({ onToast }: Props) {
         </Modal>
       )}
 
-      {pinOpen && (
-        <Modal onClose={() => !busy && setPinOpen(false)} title="أدخل الرقم السري">
-          <p className="text-sm text-slate-500">للتجربة استخدم الرقم 1234</p>
-          <div className="mt-4 flex justify-center gap-2" dir="ltr">
-            {[0, 1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className={`h-12 w-12 rounded-xl border-2 text-center text-xl font-black leading-[46px] ${
-                  pin[i] ? "border-[#0a2c72] bg-blue-50" : "border-slate-200"
-                }`}
-              >
-                {pin[i] ? "•" : ""}
-              </div>
-            ))}
+      {demoCodeOpen && (
+        <Modal onClose={() => !busy && setDemoCodeOpen(false)} title="اختيار نتيجة تجريبية">
+          <p className="text-sm leading-6 text-slate-600">
+            هذه خانة رمز اختبار وليست كلمة مرور. لا تدخل أي كلمة مرور أو بيانات دخول حقيقية؛ الرمز لا يُحفظ ولا يُرسل إلى أي جهة.
+          </p>
+          <label htmlFor="simulation-code" className="mt-4 block text-sm font-bold text-[#0a2c72]">
+            رمز السيناريو
+          </label>
+          <input
+            id="simulation-code"
+            type="text"
+            autoComplete="off"
+            spellCheck={false}
+            value={demoCode}
+            onChange={(event) => setDemoCode(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") submitDemoCode();
+            }}
+            placeholder="DEMO-SUCCESS أو DEMO-FAIL"
+            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-left font-mono outline-none focus:ring-2 focus:ring-blue-200"
+            dir="ltr"
+            disabled={busy}
+          />
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setDemoCode("DEMO-SUCCESS")}
+              className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2.5 text-sm font-bold text-emerald-800 disabled:opacity-50"
+            >
+              تجربة نجاح
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setDemoCode("DEMO-FAIL")}
+              className="rounded-xl border border-red-300 bg-red-50 px-3 py-2.5 text-sm font-bold text-red-800 disabled:opacity-50"
+            >
+              تجربة فشل
+            </button>
           </div>
-          <div className="mt-4 grid grid-cols-3 gap-2" dir="ltr">
-            {["1", "2", "3", "4", "5", "6", "7", "8", "9", "⌫", "0", "OK"].map((k) => (
-              <button
-                key={k}
-                disabled={busy}
-                onClick={() => {
-                  if (k === "⌫") setPin((p) => p.slice(0, -1));
-                  else if (k === "OK") submitPin();
-                  else if (pin.length < 4) setPin((p) => p + k);
-                }}
-                className="rounded-xl bg-slate-50 py-3 font-bold hover:bg-blue-50 disabled:opacity-50"
-              >
-                {k}
-              </button>
-            ))}
-          </div>
-          {busy && <div className="mt-3 text-center text-sm text-blue-700">جاري تنفيذ التحويل...</div>}
+          <button
+            type="button"
+            disabled={busy}
+            onClick={submitDemoCode}
+            className="mt-3 w-full rounded-xl bg-[#0a2c72] py-2.5 font-bold text-white disabled:opacity-50"
+          >
+            {busy ? "جاري عرض النتيجة التجريبية..." : "عرض نتيجة المحاكاة"}
+          </button>
         </Modal>
       )}
 
       {cancelOpen && (
-        <Modal onClose={() => setCancelOpen(false)} title="إلغاء التحويل">
-          <p className="text-sm text-slate-600">هل تريد إلغاء عملية التحويل الحالية؟</p>
+        <Modal onClose={() => setCancelOpen(false)} title="إعادة ضبط المحاكاة">
+          <p className="text-sm text-slate-600">هل تريد إعادة بيانات هذا السيناريو إلى البداية؟</p>
           <div className="mt-4 flex gap-2">
             <button onClick={resetAll} className="flex-1 rounded-xl bg-red-600 py-2.5 font-bold text-white">
-              نعم، إلغاء
+              نعم، إعادة الضبط
             </button>
             <button onClick={() => setCancelOpen(false)} className="flex-1 rounded-xl border py-2.5 font-bold">
               لا

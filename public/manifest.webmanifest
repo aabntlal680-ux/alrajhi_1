@@ -1,0 +1,27 @@
+{
+  "id": "./",
+  "short_name": "نموذج مصرفي",
+  "name": "تصوّر واجهة مصرفية — نموذج غير رسمي",
+  "description": "واجهة تجريبية غير رسمية لأغراض العرض فقط؛ لا تتصل بمصرف ولا تنفذ عمليات مالية.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#e9eef6",
+  "theme_color": "#0a2c72",
+  "icons": [
+    {
+      "src": "./icons/bank-prototype-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/bank-prototype-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

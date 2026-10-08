@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
-import { ACCOUNTS, BENEFICIARIES, BILLS, TRANSACTIONS, formatMoney } from "../data";
+import { ACCOUNTS, BILLS, TRANSACTIONS, formatMoney, type Beneficiary, type PageId } from "../data";
+import CountrySelect from "../components/CountrySelect";
+import { WORLD_COUNTRIES } from "../data/countries";
+import { getAllBeneficiaries, getLastSavedBeneficiaryId, saveDemoBeneficiary } from "../utils/demoStorage";
 import {
   IconBank,
   IconCard,
@@ -45,8 +48,11 @@ function Card({
 }
 
 export function LocalTransfer({ onToast }: { onToast: (m: string, t?: "ok" | "err" | "info") => void }) {
-  const locals = BENEFICIARIES.filter((b) => b.countryCode === "SA");
-  const [ben, setBen] = useState(locals[0]?.id ?? "");
+  const locals = useMemo(() => getAllBeneficiaries().filter((b) => b.countryCode === "SA"), []);
+  const [ben, setBen] = useState(() => {
+    const last = getLastSavedBeneficiaryId();
+    return locals.some((item) => item.id === last) ? last : locals[0]?.id ?? "";
+  });
   const [amount, setAmount] = useState("3,500.00");
   const [note, setNote] = useState("");
   const selected = locals.find((b) => b.id === ben) ?? locals[0];
@@ -60,14 +66,15 @@ export function LocalTransfer({ onToast }: { onToast: (m: string, t?: "ok" | "er
               <IconTransfer size={24} />
             </div>
             <div>
-              <h1 className="text-xl font-extrabold">تحويل محلي</h1>
-              <p className="text-sm text-blue-100">تحويل بين البنوك داخل المملكة عبر سريع</p>
+              <h1 className="text-xl font-extrabold">تحويل محلي · محاكاة</h1>
+              <p className="text-sm text-blue-100">نموذج واجهة فقط — لا ينفذ حوالات فعلية</p>
             </div>
           </div>
         </div>
         <Card title="بيانات المستفيد">
-          <label className="text-xs text-slate-500">المستفيد</label>
+          <label htmlFor="local-beneficiary" className="text-xs text-slate-500">المستفيد</label>
           <select
+            id="local-beneficiary"
             value={ben}
             onChange={(e) => setBen(e.target.value)}
             className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold outline-none"
@@ -78,26 +85,32 @@ export function LocalTransfer({ onToast }: { onToast: (m: string, t?: "ok" | "er
               </option>
             ))}
           </select>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 text-sm">
-            <div>
-              <div className="text-xs text-slate-500">الآيبان</div>
-              <div className="font-mono font-bold">{selected?.iban}</div>
+          {selected ? (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 text-sm">
+              <div>
+                <div className="text-xs text-slate-500">الآيبان</div>
+                <div className="font-mono font-bold">{selected.iban}</div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-500">المصرف</div>
+                <div className="font-bold">{selected.bank}</div>
+              </div>
             </div>
-            <div>
-              <div className="text-xs text-slate-500">المصرف</div>
-              <div className="font-bold">{selected?.bank}</div>
-            </div>
-          </div>
+          ) : (
+            <p className="mt-3 text-sm text-slate-500">لا يوجد مستفيد محلي محفوظ بعد. أضف مستفيدًا من صفحة «مستفيد جديد» واختر السعودية.</p>
+          )}
         </Card>
         <Card title="تفاصيل المبلغ">
-          <label className="text-xs text-slate-500">المبلغ (ريال سعودي)</label>
+          <label className="text-xs text-slate-500" htmlFor="local-amount">المبلغ (ريال سعودي)</label>
           <input
+            id="local-amount"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-lg font-black text-[#0a2c72] outline-none"
           />
-          <label className="mt-3 block text-xs text-slate-500">الغرض / الملاحظات</label>
+          <label className="mt-3 block text-xs text-slate-500" htmlFor="local-note">الغرض / الملاحظات</label>
           <input
+            id="local-note"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="مثال: سداد إيجار"
@@ -106,10 +119,10 @@ export function LocalTransfer({ onToast }: { onToast: (m: string, t?: "ok" | "er
         </Card>
       </div>
       <aside className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100 h-fit">
-        <h3 className="font-extrabold text-[#1a5fbf]">ملخص التحويل</h3>
+        <h3 className="font-extrabold text-[#1a5fbf]">ملخص المحاكاة</h3>
         <div className="mt-4 space-y-2 text-sm">
           <div className="flex justify-between">
-            <span>المبلغ</span>
+            <span>المبلغ التجريبي</span>
             <b>{amount} SAR</b>
           </div>
           <div className="flex justify-between">
@@ -118,25 +131,57 @@ export function LocalTransfer({ onToast }: { onToast: (m: string, t?: "ok" | "er
           </div>
         </div>
         <button
-          onClick={() => onToast("تم إرسال التحويل المحلي بنجاح", "ok")}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a2c72] py-3 font-bold text-white"
+          disabled={!selected}
+          onClick={() => onToast("اكتملت محاكاة الواجهة فقط؛ لم يتم إرسال حوالة فعلية.", "info")}
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a2c72] py-3 font-bold text-white disabled:opacity-50"
         >
-          إرسال التحويل <IconSend size={16} />
+          محاكاة الإرسال <IconSend size={16} />
         </button>
       </aside>
     </div>
   );
 }
 
-export function NewBeneficiary({ onToast }: { onToast: (m: string, t?: "ok" | "err" | "info") => void }) {
-  const [form, setForm] = useState({
-    name: "",
-    iban: "",
-    bank: "",
-    country: "الإمارات",
-    idn: "",
-  });
-  const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+export function NewBeneficiary({
+  onToast,
+  onSaved,
+}: {
+  onToast: (m: string, t?: "ok" | "err" | "info") => void;
+  onSaved: (page: PageId) => void;
+}) {
+  const [form, setForm] = useState({ name: "", iban: "", bank: "", idn: "" });
+  const [countryCode, setCountryCode] = useState("AE");
+  const country = WORLD_COUNTRIES.find((item) => item.code === countryCode) ?? WORLD_COUNTRIES[0];
+  const set = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
+
+  const save = () => {
+    if (!form.name.trim() || !form.iban.trim() || !form.bank.trim()) {
+      onToast("يرجى إدخال الاسم والآيبان واسم المصرف", "err");
+      return;
+    }
+
+    const id = typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `demo-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const beneficiary: Beneficiary = {
+      id,
+      name: form.name.trim(),
+      idNumber: form.idn.trim() || "—",
+      nationality: country.name,
+      country: country.name,
+      countryCode: country.code,
+      bank: form.bank.trim(),
+      iban: form.iban.trim(),
+      currency: country.code === "SA" ? "SAR" : "USD",
+    };
+
+    if (!saveDemoBeneficiary(beneficiary)) {
+      onToast("تعذر الحفظ في هذا المتصفح. تحقق من إعدادات التخزين المحلي.", "err");
+      return;
+    }
+    onToast("حُفظ المستفيد التجريبي في هذا المتصفح فقط.", "ok");
+    onSaved(country.code === "SA" ? "local-transfer" : "intl-transfer");
+  };
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 animate-fade-in">
@@ -146,49 +191,46 @@ export function NewBeneficiary({ onToast }: { onToast: (m: string, t?: "ok" | "e
             <IconPlus size={24} />
           </div>
           <div>
-            <h1 className="text-xl font-extrabold">تحويل مستفيد جديد</h1>
-            <p className="text-sm text-blue-100">إضافة مستفيد ثم تنفيذ التحويل</p>
+            <h1 className="text-xl font-extrabold">مستفيد تجريبي جديد</h1>
+            <p className="text-sm text-blue-100">تُحفظ البيانات محليًا لهذا النموذج فقط</p>
           </div>
         </div>
       </div>
       <Card title="بيانات المستفيد الجديد">
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+          استخدم بيانات اصطناعية فقط. تُخزّن البيانات في ذاكرة هذا المتصفح ولا تُرسل إلى خادم؛ لا تدخل معلومات شخصية أو مصرفية حقيقية.
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          {[
-            ["name", "الاسم الكامل"],
-            ["idn", "رقم الهوية / الإقامة"],
-            ["iban", "رقم الآيبان"],
-            ["bank", "اسم المصرف"],
-          ].map(([k, l]) => (
-            <label key={k} className="text-sm">
-              <span className="text-xs text-slate-500">{l}</span>
+          {([
+            ["name", "الاسم التجريبي"],
+            ["idn", "رقم تعريف تجريبي (اختياري)"],
+            ["iban", "آيبان تجريبي"],
+            ["bank", "اسم المصرف التجريبي"],
+          ] as const).map(([key, label]) => (
+            <label key={key} className="text-sm">
+              <span className="text-xs text-slate-500">{label}</span>
               <input
-                value={(form as Record<string, string>)[k]}
-                onChange={(e) => set(k, e.target.value)}
+                value={form[key]}
+                onChange={(event) => set(key, event.target.value)}
+                autoComplete="off"
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-200"
               />
             </label>
           ))}
           <label className="text-sm">
             <span className="text-xs text-slate-500">الدولة</span>
-            <select
-              value={form.country}
-              onChange={(e) => set("country", e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none"
-            >
-              {["الإمارات", "الكويت", "قطر", "البحرين", "عُمان", "مصر", "الأردن", "الولايات المتحدة"].map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
+            <CountrySelect
+              value={countryCode}
+              onChange={(selectedCountry) => setCountryCode(selectedCountry.code)}
+            />
           </label>
         </div>
         <button
-          onClick={() => {
-            if (!form.name || !form.iban) return onToast("يرجى تعبئة الاسم والآيبان", "err");
-            onToast("تم حفظ المستفيد بنجاح ويمكن التحويل إليه", "ok");
-          }}
+          type="button"
+          onClick={save}
           className="mt-4 rounded-xl bg-[#0a2c72] px-6 py-3 font-bold text-white"
         >
-          حفظ المستفيد
+          حفظ المستفيد التجريبي
         </button>
       </Card>
     </div>
@@ -431,7 +473,15 @@ export function ReportsPage() {
   );
 }
 
-export function SettingsPage({ onToast }: { onToast: (m: string, t?: "ok" | "err" | "info") => void }) {
+export function SettingsPage({
+  onToast,
+  theme,
+  onToggleTheme,
+}: {
+  onToast: (m: string, t?: "ok" | "err" | "info") => void;
+  theme: "light" | "dark";
+  onToggleTheme: () => void;
+}) {
   const [twofa, setTwofa] = useState(true);
   return (
     <div className="mx-auto max-w-3xl space-y-4 animate-fade-in">
@@ -479,7 +529,23 @@ export function SettingsPage({ onToast }: { onToast: (m: string, t?: "ok" | "err
         </button>
       </Card>
       <Card title="تفضيلات التطبيق" icon={<IconGear size={16} />}>
-        <p className="text-sm text-slate-500">واجهة مصرف الراجحي التجريبية · الوضع الفاتح · الاتجاه من اليمين لليسار.</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="font-bold">مظهر الواجهة</div>
+            <div className="text-sm text-slate-500">الوضع الحالي: {theme === "dark" ? "داكن" : "فاتح"}</div>
+          </div>
+          <button
+            type="button"
+            aria-pressed={theme === "dark"}
+            onClick={onToggleTheme}
+            className="rounded-xl bg-[#0a2c72] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#0d3a8a]"
+          >
+            التبديل إلى الوضع {theme === "dark" ? "الفاتح" : "الداكن"}
+          </button>
+        </div>
+        <p className="mt-3 text-xs leading-5 text-slate-500">
+          هذا نموذج واجهة غير رسمي؛ تفضيلات المظهر محفوظة محليًا في هذا المتصفح.
+        </p>
       </Card>
     </div>
   );
