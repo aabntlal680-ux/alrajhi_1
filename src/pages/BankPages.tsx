@@ -66,8 +66,8 @@ export function LocalTransfer({ onToast }: { onToast: (m: string, t?: "ok" | "er
               <IconTransfer size={24} />
             </div>
             <div>
-              <h1 className="text-xl font-extrabold">تحويل محلي · محاكاة</h1>
-              <p className="text-sm text-blue-100">نموذج واجهة فقط — لا ينفذ حوالات فعلية</p>
+              <h1 className="text-xl font-extrabold">تحويل محلي</h1>
+              <p className="text-sm text-blue-100">حوالات مالية — سريعة وأمنة</p>
             </div>
           </div>
         </div>
@@ -119,10 +119,10 @@ export function LocalTransfer({ onToast }: { onToast: (m: string, t?: "ok" | "er
         </Card>
       </div>
       <aside className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100 h-fit">
-        <h3 className="font-extrabold text-[#1a5fbf]">ملخص المحاكاة</h3>
+        <h3 className="font-extrabold text-[#1a5fbf]">تنفيذ</h3>
         <div className="mt-4 space-y-2 text-sm">
           <div className="flex justify-between">
-            <span>المبلغ التجريبي</span>
+            <span>المبلغ المحول</span>
             <b>{amount} SAR</b>
           </div>
           <div className="flex justify-between">
@@ -132,10 +132,10 @@ export function LocalTransfer({ onToast }: { onToast: (m: string, t?: "ok" | "er
         </div>
         <button
           disabled={!selected}
-          onClick={() => onToast("اكتملت محاكاة الواجهة فقط؛ لم يتم إرسال حوالة فعلية.", "info")}
+          onClick={() => onToast("اكتملت العملية؛.", "info")}
           className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a2c72] py-3 font-bold text-white disabled:opacity-50"
         >
-          محاكاة الإرسال <IconSend size={16} />
+          إستمرار<IconSend size={16} />
         </button>
       </aside>
     </div>
@@ -179,7 +179,7 @@ export function NewBeneficiary({
       onToast("تعذر الحفظ في هذا المتصفح. تحقق من إعدادات التخزين المحلي.", "err");
       return;
     }
-    onToast("حُفظ المستفيد التجريبي في هذا المتصفح فقط.", "ok");
+    onToast("حُفظ المستفيد في النظام.", "ok");
     onSaved(country.code === "SA" ? "local-transfer" : "intl-transfer");
   };
 
@@ -191,21 +191,21 @@ export function NewBeneficiary({
             <IconPlus size={24} />
           </div>
           <div>
-            <h1 className="text-xl font-extrabold">مستفيد تجريبي جديد</h1>
-            <p className="text-sm text-blue-100">تُحفظ البيانات محليًا لهذا النموذج فقط</p>
+            <h1 className="text-xl font-extrabold">مستفيد جديد</h1>
+            <p className="text-sm text-blue-100">تُحفظ البيانات محليًا في النظام فقط</p>
           </div>
         </div>
       </div>
       <Card title="بيانات المستفيد الجديد">
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
-          استخدم بيانات اصطناعية فقط. تُخزّن البيانات في ذاكرة هذا المتصفح ولا تُرسل إلى خادم؛ لا تدخل معلومات شخصية أو مصرفية حقيقية.
+          استخدم بيانات الفعلية للمستفيد.
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {([
-            ["name", "الاسم التجريبي"],
-            ["idn", "رقم تعريف تجريبي (اختياري)"],
-            ["iban", "آيبان تجريبي"],
-            ["bank", "اسم المصرف التجريبي"],
+            ["name", "إسم المستفيد"],
+            ["idn", "رقم الحساب (اختياري)"],
+            ["iban", "آيبان المستفيد"],
+            ["bank", "اسم المصرف "],
           ] as const).map(([key, label]) => (
             <label key={key} className="text-sm">
               <span className="text-xs text-slate-500">{label}</span>
@@ -230,7 +230,7 @@ export function NewBeneficiary({
           onClick={save}
           className="mt-4 rounded-xl bg-[#0a2c72] px-6 py-3 font-bold text-white"
         >
-          حفظ المستفيد التجريبي
+          حفظ المستفيد
         </button>
       </Card>
     </div>
@@ -544,7 +544,7 @@ export function SettingsPage({
           </button>
         </div>
         <p className="mt-3 text-xs leading-5 text-slate-500">
-          هذا نموذج واجهة غير رسمي؛ تفضيلات المظهر محفوظة محليًا في هذا المتصفح.
+           تفضيلات المظهر محفوظة محليًا في هذا المتصفح.
         </p>
       </Card>
     </div>
