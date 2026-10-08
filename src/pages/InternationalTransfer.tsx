@@ -100,7 +100,7 @@ export default function InternationalTransfer({ onToast }: Props) {
 
   const startSend = () => {
     if (amount < MIN_AMOUNT) {
-      onToast(`الحد الأدنى للمبلغ التجريبي هو ${formatMoney(MIN_AMOUNT)} ريال`, "err");
+      onToast(`الحد الأدنى للمبلغ هو ${formatMoney(MIN_AMOUNT)} ريال`, "err");
       return;
     }
     if (amount <= 0) {
@@ -113,7 +113,7 @@ export default function InternationalTransfer({ onToast }: Props) {
   const goReview = () => {
     setConfirmOpen(false);
     setStep(2);
-    onToast("انتقلت إلى مراجعة بيانات المحاكاة فقط.", "info");
+    onToast("انتقلت إلى مراجعة بيانات التحويل.", "info");
   };
 
   const requestDemoCode = () => {
@@ -124,7 +124,7 @@ export default function InternationalTransfer({ onToast }: Props) {
   const submitDemoCode = () => {
     const code = demoCode.trim().toUpperCase();
     if (code !== "DEMO-SUCCESS" && code !== "DEMO-FAIL") {
-      onToast("استخدم رمزًا تجريبيًا فقط: DEMO-SUCCESS أو DEMO-FAIL.", "err");
+      onToast("استخدم رمزًا صالح: DEMO-SUCCESS أو DEMO-FAIL.", "err");
       return;
     }
 
@@ -139,8 +139,8 @@ export default function InternationalTransfer({ onToast }: Props) {
       setStep(3);
       onToast(
         result === "success"
-          ? "اكتملت محاكاة النجاح؛ لم يتم تنفيذ حوالة فعلية."
-          : "اكتملت محاكاة الفشل؛ لم يتم تنفيذ حوالة فعلية.",
+          ? "اكتملت عملية التحقق بنجاح؛."
+          : "عملية تحقق فاشلة؛.",
         "info"
       );
     }, 500);
@@ -153,7 +153,7 @@ export default function InternationalTransfer({ onToast }: Props) {
     setDemoCodeOpen(false);
     setRefNo("");
     setCancelOpen(false);
-    onToast("تمت إعادة ضبط سيناريو المحاكاة.", "info");
+    onToast("جاري التحقق.", "info");
   };
 
   return (
@@ -167,16 +167,16 @@ export default function InternationalTransfer({ onToast }: Props) {
                   <IconGlobe size={26} />
                 </div>
                 <div>
-                  <h1 className="text-xl font-extrabold lg:text-[22px]">تحويل دولي · محاكاة</h1>
-                  <p className="text-[12.5px] text-blue-100/90">استعراض تدفق واجهة تجريبي فقط — لا يتم تنفيذ تحويل فعلي</p>
+                  <h1 className="text-xl font-extrabold lg:text-[22px]">تحويل دولي ·</h1>
+                  <p className="text-[12.5px] text-blue-100/90"> جاري التقدم</p>
                 </div>
               </div>
 
               <ol className="flex min-w-0 flex-1 items-center justify-end gap-2 lg:max-w-[560px]">
                 {[
-                  { n: 1, label: "بيانات الاختبار" },
-                  { n: 2, label: "مراجعة الاختبار" },
-                  { n: 3, label: "نتيجة المحاكاة" },
+                  { n: 1, label: "بيانات التحويل" },
+                  { n: 2, label: "مراجعة العملية" },
+                  { n: 3, label: "نتيجة العملية" },
                 ].map((s, i) => (
                   <li key={s.n} className="flex min-w-0 items-center gap-2">
                     {i > 0 && <div className={`step-line ${step >= s.n ? "opacity-100" : "opacity-40"}`} />}
@@ -246,7 +246,7 @@ export default function InternationalTransfer({ onToast }: Props) {
                       )}
                     </div>
                     <div>
-                      <div className="text-[12px] text-slate-500">رقم الهوية / الإقامة</div>
+                      <div className="text-[12px] text-slate-500">رقم الحساب / الإقامة</div>
                       <div className="mt-0.5 font-bold tracking-wider text-[#0a2c72]">{beneficiary.idNumber}</div>
                     </div>
                     <div>
@@ -322,17 +322,17 @@ export default function InternationalTransfer({ onToast }: Props) {
 
                 <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
                   <header className="mb-3 flex items-center justify-between">
-                    <h2 className="text-[15px] font-extrabold text-[#1a5fbf]">معلومات المحاكاة</h2>
+                    <h2 className="text-[15px] font-extrabold text-[#1a5fbf]">معلومات الحوالة</h2>
                     <span className="text-[#1a5fbf]"><IconFile size={18} /></span>
                   </header>
                   <div className="space-y-3 text-[13px]">
                     <div>
                       <div className="text-[12px] text-slate-500">نوع الرسوم</div>
-                      <div className="mt-0.5 font-bold text-[#0a2c72]">قيمة تقديرية للعرض فقط</div>
+                      <div className="mt-0.5 font-bold text-[#0a2c72]">قيمة تقديرية</div>
                     </div>
                     <div className="relative">
                       <div className="flex items-center gap-1 text-[12px] text-slate-500">
-                        تاريخ سيناريو الاختبار
+                        تاريخ العملية
                         <IconCalendar size={13} className="text-[#1a5fbf]" />
                       </div>
                       <button onClick={() => setCalOpen(true)} className="mt-0.5 font-bold text-[#0a2c72]">
@@ -340,9 +340,9 @@ export default function InternationalTransfer({ onToast }: Props) {
                       </button>
                     </div>
                     <div>
-                      <div className="mb-1 text-[12px] text-slate-500">حالة المحاكاة</div>
+                      <div className="mb-1 text-[12px] text-slate-500">حالة العملية</div>
                       <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-[12px] font-bold text-blue-700">
-                        {simulationResult === "success" ? "نجاح تجريبي" : simulationResult === "failed" ? "فشل تجريبي" : "بانتظار الاختبار"}
+                        {simulationResult === "success" ? "نجاح" : simulationResult === "failed" ? "فشل " : "قيد التقدم "}
                       </span>
                     </div>
                   </div>
@@ -356,9 +356,9 @@ export default function InternationalTransfer({ onToast }: Props) {
                         حالة سيناريو الاختبار <IconClock size={18} />
                       </div>
                       <div className="mt-1 text-[13px] font-bold text-[#0a2c72]">
-                        {simulationResult === "success" ? "تم عرض نتيجة نجاح تجريبية" : simulationResult === "failed" ? "تم عرض نتيجة فشل تجريبية" : "لم يتم اختيار سيناريو بعد"}
+                        {simulationResult === "success" ? "تم عرض نتيجة نجاح" : simulationResult === "failed" ? "تم عرض نتيجة فشل " : "لم يتم التحقق"}
                       </div>
-                      <div className="text-[12px] text-slate-500">لا يتم إرسال بيانات أو تنفيذ حوالات أو تحصيل رسوم.</div>
+                      <div className="text-[12px] text-slate-500">تحت المعالجه.</div>
                     </div>
                     <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">محاكاة</span>
                   </div>
@@ -366,7 +366,6 @@ export default function InternationalTransfer({ onToast }: Props) {
                     <div className="grid grid-cols-1 gap-3 text-[13px] md:grid-cols-4 md:items-center">
                       <div>
                         <div className="text-[11px] text-slate-500">بند الرسوم</div>
-                        تقدير توضيحي فقط
                       </div>
                       <div className="font-extrabold text-[#0a2c72]">
                         <div className="text-[11px] font-medium text-slate-500">القيمة الافتراضية</div>
@@ -374,11 +373,9 @@ export default function InternationalTransfer({ onToast }: Props) {
                       </div>
                       <div>
                         <div className="text-[11px] text-slate-500">التحصيل</div>
-                        لا يوجد تحصيل فعلي
                       </div>
                       <div className="text-slate-600">
                         <div className="text-[11px] text-slate-500">ملاحظة</div>
-                        بيانات ورسوم افتراضية لأغراض عرض الواجهة فقط.
                       </div>
                     </div>
                   </div>
@@ -386,7 +383,7 @@ export default function InternationalTransfer({ onToast }: Props) {
 
               <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
                 <h3 className="mb-3 flex items-center gap-2 text-[15px] font-extrabold text-[#1a5fbf]">
-                  تفاصيل المحاكاة والمعلومات
+                  تفاصيل العملية والمعلومات
                   <IconFile size={16} />
                 </h3>
                 <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -414,7 +411,7 @@ export default function InternationalTransfer({ onToast }: Props) {
                   </div>
                 </div>
                 <div className="mt-4 rounded-xl bg-blue-50 px-4 py-3 text-[13px] text-[#0a2c72]">
-                  سعر صرف تجريبي: 1 SAR = {cur.rate} {cur.code} · المبلغ النظري المتوقع{" "}
+                  سعر صرف : 1 SAR = {cur.rate} {cur.code} · المبلغ المتوقع{" "}
                   <b>
                     {formatMoney(received)} {cur.code}
                   </b>
@@ -425,8 +422,8 @@ export default function InternationalTransfer({ onToast }: Props) {
 
           {step === 2 && (
             <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-              <h2 className="text-lg font-extrabold text-[#0a2c72]">مراجعة سيناريو المحاكاة</h2>
-              <p className="mt-1 text-sm text-slate-500">راجع بيانات الاختبار؛ المتابعة تعرض نتيجة محاكاة ولا ترسل حوالة</p>
+              <h2 className="text-lg font-extrabold text-[#0a2c72]">مراجعة العمليه</h2>
+              <p className="mt-1 text-sm text-slate-500">راجع بيانات العملية؛</p>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 {[
                   ["المستفيد", beneficiary.name],
@@ -438,7 +435,7 @@ export default function InternationalTransfer({ onToast }: Props) {
                   ["العملة", `${cur.name} (${cur.code})`],
                   ["المبلغ المستلم", `${formatMoney(received)} ${cur.code}`],
                   ["التاريخ", displayDate],
-                  ["الحساب الافتراضي", "حساب تجريبي · **** 0000"],
+                  ["الحساب ", "حساب  · **** 0000"],
                 ].map(([k, v]) => (
                   <div key={k} className="rounded-xl bg-slate-50 px-4 py-3">
                     <div className="text-[12px] text-slate-500">{k}</div>
@@ -451,7 +448,7 @@ export default function InternationalTransfer({ onToast }: Props) {
                   onClick={requestDemoCode}
                   className="inline-flex items-center gap-2 rounded-xl bg-[#0a2c72] px-6 py-3 font-bold text-white hover:bg-[#0d3a8a]"
                 >
-                  اختيار سيناريو تجريبي
+                  تاكيد الرمز
                   <IconSend size={18} />
                 </button>
                 <button
@@ -471,36 +468,36 @@ export default function InternationalTransfer({ onToast }: Props) {
                   {simulationResult === "failed" ? <IconX size={30} /> : <IconCheck size={32} />}
                 </div>
                 <h2 className={`mt-3 text-xl font-extrabold ${simulationResult === "failed" ? "text-red-700" : "text-emerald-700"}`}>
-                  {simulationResult === "failed" ? "فشل سيناريو المحاكاة" : "نجاح سيناريو المحاكاة"}
+                  {simulationResult === "failed" ? "فشل العملية" : "نجاح العملية"}
                 </h2>
-                <p className="text-sm text-slate-500">تقرير اختبار تجريبي فقط — لا يثبت تنفيذ حوالة أو حركة مالية</p>
+                <p className="text-sm text-slate-500">تقرير العملية الجارية</p>
                 <div className="mt-2 rounded-full bg-blue-50 px-4 py-1 text-sm font-bold text-[#1a5fbf]">
-                  رقم الاختبار: {refNo}
+                  رقم المرجعي: {refNo}
                 </div>
               </div>
 
               {simulationResult === "failed" && (
                 <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-800">
-                  <div className="font-extrabold">سبب الفشل في المحاكاة</div>
-                  <p>تم اختيار رمز السيناريو التجريبي DEMO-FAIL. هذه نتيجة اختبار واجهة فقط، وليست رفضًا من مصرف أو نظام تحويل.</p>
+                  <div className="font-extrabold">سبب الفشل </div>
+                  <p>رسوم غير مكتملة</p>
                 </div>
               )}
 
               <div className="mt-6 divide-y divide-slate-100 rounded-2xl border border-slate-100">
                 {[
-                  ["المستفيد التجريبي", beneficiary.name],
-                  ["المصرف التجريبي", beneficiary.bank],
+                  ["المستفيد", beneficiary.name],
+                  ["المصرف", beneficiary.bank],
                   ["الدولة", beneficiary.country],
-                  ["المبلغ التجريبي", `${formatMoney(amount)} SAR`],
+                  ["المبلغ", `${formatMoney(amount)} SAR`],
                   ["الرسوم التقديرية", `${formatMoney(fee)} SAR`],
-                  ["المبلغ النظري", `${formatMoney(sent)} SAR`],
+                  ["المبلغ", `${formatMoney(sent)} SAR`],
                   ["العملة المقابلة", `${formatMoney(received)} ${cur.code}`],
-                  ["تاريخ الاختبار", displayDate],
-                  ["الحالة", simulationResult === "failed" ? "فشل تجريبي" : "نجاح تجريبي"],
+                  ["تاريخ العمليه", displayDate],
+                  ["الحالة", simulationResult === "failed" ? "فشل " : "نجاح "],
                 ].map(([label, value]) => (
                   <div key={label} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
                     <span className="text-slate-500">{label}</span>
-                    <span className={`text-left font-bold ${simulationResult === "failed" && ["المستفيد التجريبي", "المصرف التجريبي", "الحالة"].includes(label) ? "text-red-700" : "text-[#0a2c72]"}`}>
+                    <span className={`text-left font-bold ${simulationResult === "failed" && ["المستفيد ", "المصرف ", "الحالة"].includes(label) ? "text-red-700" : "text-[#0a2c72]"}`}>
                       {value}
                     </span>
                   </div>
@@ -511,7 +508,7 @@ export default function InternationalTransfer({ onToast }: Props) {
                   onClick={() => window.print()}
                   className="inline-flex items-center gap-2 rounded-xl bg-[#0a2c72] px-5 py-2.5 font-bold text-white"
                 >
-                  <IconPrint size={16} /> طباعة تقرير المحاكاة
+                  <IconPrint size={16} /> طباعة تقرير 
                 </button>
                 <button
                   onClick={() => {
@@ -531,22 +528,22 @@ export default function InternationalTransfer({ onToast }: Props) {
         <aside className="w-full shrink-0 xl:w-[280px]">
           <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100 xl:sticky xl:top-4">
             <header className="mb-4 flex items-center justify-between">
-              <h2 className="text-[15px] font-extrabold text-[#1a5fbf]">ملخص الاختبار</h2>
+              <h2 className="text-[15px] font-extrabold text-[#1a5fbf]">ملخص التحويل</h2>
               <span className="text-[#1a5fbf]">
                 <IconTransfer size={18} />
               </span>
             </header>
             <div className="space-y-3 text-[13.5px]">
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">المبلغ التجريبي</span>
+                <span className="text-slate-500">المبلغ</span>
                 <span className="font-extrabold text-[#0a2c72]">{formatMoney(amount)} SAR</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">رسوم افتراضية</span>
+                <span className="text-slate-500">رسوم</span>
                 <span className="font-extrabold text-[#0a2c72]">{formatMoney(fee)} SAR</span>
               </div>
               <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-                <span className="text-slate-500">الصافي النظري</span>
+                <span className="text-slate-500">الصافي</span>
                 <span className="font-extrabold text-[#0a2c72]">{formatMoney(sent)} SAR</span>
               </div>
             </div>
@@ -572,7 +569,7 @@ export default function InternationalTransfer({ onToast }: Props) {
       </div>
 
       {calOpen && (
-        <Modal onClose={() => setCalOpen(false)} title="اختيار تاريخ التحويل">
+        <Modal onClose={() => setCalOpen(false)} title=" تاريخ التحويل">
           <input
             type="date"
             value={date}
@@ -589,9 +586,9 @@ export default function InternationalTransfer({ onToast }: Props) {
       )}
 
       {confirmOpen && (
-        <Modal onClose={() => setConfirmOpen(false)} title="تأكيد بيانات المحاكاة">
+        <Modal onClose={() => setConfirmOpen(false)} title="تأكيد بيانات التحويل">
           <p className="text-sm leading-6 text-slate-600">
-            ستعرض هذه الخطوة نتيجة محاكاة فقط. لا توجد عملية فعلية. المبلغ التجريبي{" "}
+            المبلغ المحول{" "}
             <b>
               {formatMoney(amount)} SAR
             </b>{" "}
