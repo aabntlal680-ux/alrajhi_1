@@ -212,7 +212,7 @@ export default function InternationalTransfer({ onToast }: Props) {
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                 <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
                   <header className="mb-3 flex items-center justify-between">
-                    <h2 className="text-[15px] font-extrabold text-[#1a5fbf]">تفاصيل التحويل</h2>
+                    <h2 className="text-[15px] font-extrabold text-[#1a5fbf]">بيانات المستفيد</h2>
                     <span className="text-[#1a5fbf]">
                       <IconFile size={18} />
                     </span>
@@ -328,7 +328,7 @@ export default function InternationalTransfer({ onToast }: Props) {
                   <div className="space-y-3 text-[13px]">
                     <div>
                       <div className="text-[12px] text-slate-500">نوع الرسوم</div>
-                      <div className="mt-0.5 font-bold text-[#0a2c72]">قيمة تقديرية</div>
+                      <div className="mt-0.5 font-bold text-[#0a2c72]">القيمة المضافة</div>
                     </div>
                     <div className="relative">
                       <div className="flex items-center gap-1 text-[12px] text-slate-500">
@@ -353,7 +353,7 @@ export default function InternationalTransfer({ onToast }: Props) {
                   <div className="flex items-start justify-between gap-3 px-4 pt-4">
                     <div>
                       <div className="flex items-center gap-2 text-[15px] font-extrabold text-[#1a5fbf]">
-                        حالة سيناريو الاختبار <IconClock size={18} />
+                        حالة العملية <IconClock size={18} />
                       </div>
                       <div className="mt-1 text-[13px] font-bold text-[#0a2c72]">
                         {simulationResult === "success" ? "تم عرض نتيجة نجاح" : simulationResult === "failed" ? "تم عرض نتيجة فشل " : "لم يتم التحقق"}
@@ -518,7 +518,7 @@ export default function InternationalTransfer({ onToast }: Props) {
                   }}
                   className="rounded-xl px-5 py-2.5 font-bold text-slate-500 hover:bg-slate-50"
                 >
-                  اختبار جديد
+                  تحويل جديد
                 </button>
               </div>
             </section>
@@ -552,7 +552,7 @@ export default function InternationalTransfer({ onToast }: Props) {
               disabled={step === 3}
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a2c72] py-3 text-[14.5px] font-extrabold text-white shadow-md shadow-[#0a2c72]/25 hover:bg-[#0d3a8a] disabled:opacity-50"
             >
-              بدء المحاكاة
+              بدء التحويل
               <IconSend size={18} />
             </button>
             <button
@@ -596,7 +596,7 @@ export default function InternationalTransfer({ onToast }: Props) {
           </p>
           <div className="mt-4 flex gap-2">
             <button onClick={goReview} className="flex-1 rounded-xl bg-[#0a2c72] py-2.5 font-bold text-white">
-              متابعة المحاكاة
+              متابعة التحويل
             </button>
             <button
               onClick={() => setConfirmOpen(false)}
@@ -609,12 +609,12 @@ export default function InternationalTransfer({ onToast }: Props) {
       )}
 
       {demoCodeOpen && (
-        <Modal onClose={() => !busy && setDemoCodeOpen(false)} title="اختيار نتيجة تجريبية">
+        <Modal onClose={() => !busy && setDemoCodeOpen(false)} title=" نتيجة العمليه">
           <p className="text-sm leading-6 text-slate-600">
-            هذه خانة رمز اختبار وليست كلمة مرور. لا تدخل أي كلمة مرور أو بيانات دخول حقيقية؛ الرمز لا يُحفظ ولا يُرسل إلى أي جهة.
+           ادخل الرمز هنا
           </p>
           <label htmlFor="simulation-code" className="mt-4 block text-sm font-bold text-[#0a2c72]">
-            رمز السيناريو
+            رمز العملية
           </label>
           <input
             id="simulation-code"
@@ -638,7 +638,7 @@ export default function InternationalTransfer({ onToast }: Props) {
               onClick={() => setDemoCode("DEMO-SUCCESS")}
               className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2.5 text-sm font-bold text-emerald-800 disabled:opacity-50"
             >
-              تجربة نجاح
+              تحويل ناجح
             </button>
             <button
               type="button"
@@ -646,7 +646,7 @@ export default function InternationalTransfer({ onToast }: Props) {
               onClick={() => setDemoCode("DEMO-FAIL")}
               className="rounded-xl border border-red-300 bg-red-50 px-3 py-2.5 text-sm font-bold text-red-800 disabled:opacity-50"
             >
-              تجربة فشل
+              تحويل فاشل
             </button>
           </div>
           <button
@@ -655,14 +655,14 @@ export default function InternationalTransfer({ onToast }: Props) {
             onClick={submitDemoCode}
             className="mt-3 w-full rounded-xl bg-[#0a2c72] py-2.5 font-bold text-white disabled:opacity-50"
           >
-            {busy ? "جاري عرض النتيجة التجريبية..." : "عرض نتيجة المحاكاة"}
+            {busy ? "جاري عرض النتيجة العمليه..." : "عرض نتيجة التحويل"}
           </button>
         </Modal>
       )}
 
       {cancelOpen && (
-        <Modal onClose={() => setCancelOpen(false)} title="إعادة ضبط المحاكاة">
-          <p className="text-sm text-slate-600">هل تريد إعادة بيانات هذا السيناريو إلى البداية؟</p>
+        <Modal onClose={() => setCancelOpen(false)} title="إعادة ضبط العملية الجارية">
+          <p className="text-sm text-slate-600">هل تريد إعادة بيانات هذا التحويل إلى البداية؟</p>
           <div className="mt-4 flex gap-2">
             <button onClick={resetAll} className="flex-1 rounded-xl bg-red-600 py-2.5 font-bold text-white">
               نعم، إعادة الضبط
