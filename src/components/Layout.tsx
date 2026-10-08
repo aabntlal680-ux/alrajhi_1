@@ -126,7 +126,7 @@ export default function Layout({ current, onNavigate, theme, onToggleTheme, chil
           <LogoMark size={38} />
           <div className="hidden leading-tight sm:block">
             <div className="text-[17px] font-extrabold tracking-wide">مصرف الراجحي</div>
-            <div className="text-[10px] text-blue-200/80">تصوّر غير رسمي · واجهة تجريبية</div>
+            <div className="text-[10px] text-blue-200/80">تحويلات مالية· خدمات مصرفية</div>
           </div>
         </div>
 
@@ -243,8 +243,7 @@ export default function Layout({ current, onNavigate, theme, onToggleTheme, chil
       </header>
 
       <div role="note" className="flex shrink-0 flex-wrap items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs leading-5 text-amber-950">
-        <span className="font-extrabold">تصوّر تجريبي غير رسمي:</span>
-        <span>ليس تابعًا للمصرف ولا يتصل بأنظمته؛ لا تُنفّذ أي حوالات أو مدفوعات هنا. استخدم بيانات اصطناعية فقط، ولا تدخل كلمات مرور أو بيانات مصرفية حقيقية.</span>
+        <span className="font-extrabold">خدمات مصرفية متكاملة:</span>
       </div>
 
       <div className="flex min-h-0 flex-1">
@@ -312,7 +311,7 @@ export default function Layout({ current, onNavigate, theme, onToggleTheme, chil
             })}
           </nav>
           <div className="border-t border-white/10 p-4 text-[11px] text-blue-100/70">
-            نموذج واجهة غير رسمي · تجريبي
+            إدارة اموال شاملة
           </div>
         </aside>
 
